@@ -21,7 +21,10 @@
     "pouchdb": "^6.3.4",
     "worker-pouch": "pouchdb-community/worker-pouch#^2.0.0",
     "paper-fab": "^2.0.0",
-    "paper-dialog": "^2.0.0"
+    "paper-dialog": "^2.0.0",
+    "paper-input": "^2.0.1",
+    "paper-tabs": "^2.0.0",
+    "paper-toast": "^2.0.0"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^6.0.0-prerelease.7"
