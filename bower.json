@@ -7,7 +7,6 @@
   "dependencies": {
     "app-layout": "PolymerElements/app-layout",
     "app-route": "PolymerElements/app-route#1 - 2",
-    "iron-flex-layout": "PolymerElements/iron-flex-layout#1 - 2",
     "iron-iconset-svg": "^2.0.1",
     "iron-media-query": "PolymerElements/iron-media-query#1 - 2",
     "iron-pages": "PolymerElements/iron-pages#1 - 2",
