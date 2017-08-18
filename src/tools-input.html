@@ -1,0 +1,66 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/fontawesome-iconset/fa-all.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../bower_components/paper-styles/element-styles/paper-material-styles.html">
+<!--
+`<tools-input>` is Description
+
+@element tools-input
+-->
+<dom-module id="tools-input">
+    <template>
+        <style include="paper-material-styles">
+            :host {
+                display: block
+            }
+            iron-selector > paper-icon-button {
+                border-radius:50%;
+                background:white;
+                color:black;
+            }
+            iron-selector > paper-icon-button:not(.iron-selected) {
+                @apply --paper-material-elevation-3;
+            }
+            .iron-selected {
+                filter: invert(100%)
+            }
+        </style>
+        <iron-selector selected="{{selected}}" attr-for-selected="name">
+            <paper-icon-button icon="fa:pencil" name="ballpoint"></paper-icon-button>
+            <paper-icon-button icon="fa:eraser" name="eraser"></paper-icon-button>
+        </iron-selector>
+    </template>
+
+    <script>
+        class ToolsInput extends Polymer.Element {
+
+            static get is() { return 'tools-input'; }
+
+            static get properties() {
+                return {
+                    selected: {
+                        type: String,
+                        value: () => "ballpoint",
+                        notify: true
+                    }
+                };
+            }
+
+            constructor() {
+                super();
+            }
+
+            ready() {
+                super.ready();
+
+                Polymer.RenderStatus.afterNextRender(this, function() {
+                    
+                });
+            }
+
+        }
+
+        window.customElements.define(ToolsInput.is, ToolsInput);
+    </script>
+</dom-module>

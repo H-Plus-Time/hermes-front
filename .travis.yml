@@ -1,0 +1,27 @@
+language: node_js
+sudo: required
+dist: trusty
+addons:
+  apt:
+    sources:
+    - google-chrome
+    packages:
+    - google-chrome-beta
+    - git
+node_js:
+- '7'
+before_script:
+- |
+  git clone https://github.com/H-Plus-Time/TIL.git til
+  cd til && bash ../postAge.sh && python ../postsObjGen.py && mv posts.json ../data && cd ..
+- npm install -g bower polymer-cli lighthouse surge
+- bower install
+- polymer build
+script:
+- cp .surgeignore build/default
+- cp -r til build/default
+- surge build/default hplustime.com --token $SURGE_TOKEN
+- mkdir report && cp README.md report
+- lighthouse --chrome-flags="--disable-gpu --headless" https://hplustime.com --output html --output-path=report/index.html
+- echo audit.hplustime.com > report/CNAME
+- surge report audit.hplustime.com --token $SURGE_TOKEN

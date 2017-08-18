@@ -1,0 +1,152 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-swatch-picker/paper-swatch-picker.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-styles/element-styles/paper-material-styles.html">
+ <link rel="import" href="output-cards.html"> 
+<!--
+`<inkwell-home>` is Description
+
+@element inkwell-home
+-->
+<dom-module id="inkwell-home">
+    <template>
+        <style include="iron-flex paper-material-styles">
+            :host {
+                display: block
+            }
+            [hidden] {
+                display:none !important;
+            }
+            .add {
+                 width:150px; 
+                 height:100px; 
+                background:red;
+                border-radius:0%;
+                --paper-fab-iron-icon: {
+                    width:48px;
+                    height:48px;
+                }
+                /* @apply --paper-material-elevation-2; */
+                /* border-radius:50%;  */
+            }
+            .board-form {
+                background:#eeeeee;
+                width:150px;
+                height:100px;
+                padding:5px;
+            }
+            note-input {
+            }
+            hr {
+            display: block;
+            position: relative;
+            padding: 0;
+            margin: 8px auto;
+            height: 0;
+            width: 100%;
+            max-height: 0;
+            font-size: 1px;
+            line-height: 0;
+            clear: both;
+            border: none;
+            border-top: 1px solid #aaaaaa;
+            border-bottom: 1px solid #ffffff;
+            }
+            paper-fab[hidden] {
+                display:none !important;
+            }
+            paper-dialog {
+                z-index:100;
+            }
+        </style>
+       
+        <h2>Unfiled Cards</h2>
+        <div class="horizontal layout center-justified wrap">
+            <template is="dom-repeat" items="[[unfiledCards]]">
+                <note-card parent="/unfiled" data="[[item]]"></note-card>
+            </template>
+            <paper-fab class="add" icon="add" on-tap="newCard"></paper-fab>
+        </div>
+        <hr>
+        <h2>Boards</h2>
+        <div class="horizontal layout center-justified wrap">
+            <template is="dom-repeat" items="[[boards]]">
+                <board-card data="[[item]]" on-tap="openBoard"></board-card>
+            </template>
+            <div>
+                <paper-fab hidden$="[[editing]]" class="add" icon="add" on-tap="toggleEditing"></paper-fab>
+                <!-- edit card -->
+                <div class="board-form vertical layout center" hidden$="[[!editing]]">
+                    <paper-input value="{{newBoardData.title}}" label="Title"></paper-input>
+                    <div class="horizontal layout justified center">
+                        <paper-swatch-picker color="{{newBoardData.color}}"></paper-swatch-picker>
+                        <paper-icon-button icon="send" on-tap="newBoard"></paper-icon-button>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+    </template>
+
+    <script>
+        class InkwellHome extends Polymer.GestureEventListeners(Polymer.Element) {
+
+            static get is() { return 'inkwell-home'; }
+
+            static get properties() {
+                return {
+                    boards: Array,
+                    unfiledCards: Array,
+                    editing: {
+                        type: Boolean,
+                        value: () => false
+                    },
+                    newBoardData: {
+                        type: Object,
+                        value: () => ({
+                            color: "#ffffff"
+                        })
+                    }
+                };
+            }
+
+            constructor() {
+                super();
+            }
+
+            newCard() {
+                this.dispatchEvent(new CustomEvent('edit-note', {detail: {parent: '/unfiled'}, composed: true, bubbles: true}))
+            }
+            newBoard() {
+                this.dispatchEvent(new CustomEvent('create-board', {detail: this.newBoardData, bubbles: true, composed: true}))
+                this.set('newBoardData', {title: undefined, color: '#ffffff'})
+                this.toggleEditing();
+            }
+            toggleEditing() {
+                this.set('editing', !this.editing)
+                
+            }
+            openBoard(e) {
+                this.dispatchEvent(new CustomEvent('view-board', {detail: e.model.item._id, bubbles: true, composed: true}))
+            }
+
+            ready() {
+                super.ready();
+
+                Polymer.RenderStatus.afterNextRender(this, function() {
+                    
+                });
+            }
+
+        }
+
+        window.customElements.define(InkwellHome.is, InkwellHome);
+    </script>
+</dom-module>

@@ -1,0 +1,160 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<!--
+`<note-card>` is Description
+
+@element note-card
+-->
+<dom-module id="note-card">
+    <template>
+        <style>
+            :host {
+                display: block;
+                background:white;
+                position:relative;
+            }
+            paper-icon-button {
+                position:absolute;
+                top:0;
+                right:0;
+                z-index:5;
+            }
+            .container {
+                z-index:2;
+                width:320px;
+                height:240px;
+                @apply --paper-material-elevation-2;
+                background-size: 20px 20px;
+                background-image: -webkit-linear-gradient(left, grey 1px, transparent 1px), -webkit-linear-gradient(grey 1px, transparent 1px);
+                background-image: -moz-linear-gradient(left, grey 1px, transparent 1px), -moz-linear-gradient(grey 1px, transparent 1px);
+                background-image: -o-linear-gradient(left, grey 1px, transparent 1px), -o-linear-gradient(grey 1px, transparent 1px);
+                background-image: linear-gradient(to right, grey 1px, transparent 1px), linear-gradient(grey 1px, transparent 1px);
+            }
+        </style>
+        <h2>[[data.title]]</h2>
+        <paper-icon-button icon="create" on-tap="editCard"></paper-icon-button>
+        <img src$="data:image/svg+xml;utf8,[[data.svg]]" class="container" on-tap="viewCard"></img>
+
+    </template>
+
+    <script>
+        class NoteCard extends Polymer.GestureEventListeners(Polymer.Element) {
+
+            static get is() { return 'note-card'; }
+
+            static get properties() {
+                return {
+                    data: {
+                        type: Object
+                    },
+                    parent: {
+                        type: String,
+                        value: () => "/unfiled"
+                    }
+                };
+            }
+            static get observers() {
+                return [
+                ];
+            }
+            editCard(e) {
+                // stop the tap from going to the card as a whole
+                e.preventDefault();
+                this.dispatchEvent(new CustomEvent('edit-note',
+                    {detail: Object.assign(this.data, {parent: this.parent}), composed: true, bubbles: true }))
+            }
+
+            observeSVGData(newVal, oldVal) {
+                this.shadowRoot.querySelector('.container').innerHTML = newVal;
+            }
+
+            constructor() {
+                super();
+            }
+
+            ready() {
+                super.ready();
+
+                Polymer.RenderStatus.afterNextRender(this, function() {
+                    
+                });
+            }
+
+        }
+
+        window.customElements.define(NoteCard.is, NoteCard);
+    </script>
+</dom-module>
+<!--
+`<board-card>` is Description
+
+@element board-card
+-->
+<dom-module id="board-card">
+    <template>
+        <style>
+            :host {
+                display: block;
+                --card-color: white;
+                --card-text-color: black;
+                background:var(--card-color);
+                color: var(--card-text-color);
+                width:240px;
+                height:160px;
+                padding:5px;
+            }
+        </style>
+
+        <h2>[[data.title]]</h2>
+        
+    </template>
+
+    <script>
+        class BoardCard extends Polymer.Element {
+
+            static get is() { return 'board-card'; }
+
+            static get properties() {
+                return {
+                    data: Object
+                };
+            }
+            static get observers() {
+                return [
+                    'observeColor(data.color)'
+                ];
+            }
+
+            observeColor(hex) {
+                let vals = [hex.substring(1,3),hex.substring(3,5), hex.substring(5)].map(subhex => {
+                    let c = parseInt(subhex, 16) / 255.0;
+                    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / Math.pow(1.055,2.4))
+                })
+                let L = vals[0] * 0.2126 + vals[1] * 0.7152 + vals[2] * 0.0722
+                var textColor = "#ffffff"
+                
+                if (L > Math.sqrt(1.05 * 0.05) - 0.05) {
+                    textColor = "#000000"
+                }
+                this.updateStyles({"--card-color": hex, "--card-text-color": textColor})
+            }
+
+            constructor() {
+                super();
+            }
+
+            ready() {
+                super.ready();
+
+                Polymer.RenderStatus.afterNextRender(this, function() {
+                    
+                });
+            }
+
+        }
+
+        window.customElements.define(BoardCard.is, BoardCard);
+    </script>
+</dom-module>

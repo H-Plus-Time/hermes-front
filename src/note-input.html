@@ -1,0 +1,91 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/ink-input/ink-input.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-swatch-picker/paper-swatch-picker.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="tools-input.html">
+<dom-module id="note-input">
+    <template>
+        <style include="iron-flex">
+            :host {
+                display:block;
+                /* width:640px; */
+                margin:10px;
+            }
+            paper-icon-button[icon=edit] {
+                border-radius:50%;
+            }
+            div[edit-bar] {
+                display:flex;
+                flex-direction:row;
+                justify-content: space-between;
+            }
+        </style>
+        <paper-input auto-validate
+            label="Title" value="{{title}}"></paper-input>
+        <div edit-bar>
+            <div>
+                <paper-icon-button icon="clear" on-tap="clear"></paper-icon-button>
+                <paper-icon-button icon="save" on-tap="fireSave"></paper-icon-button>
+            </div>
+            <div>
+                <paper-chip-input></paper-chip-input>
+            </div>
+            <div id="palette" class="horizontal layout center">
+                <tools-input selected="{{tool}}"></tools-input>
+                <paper-swatch-picker color="{{inkColor}}"></paper-swatch-picker>
+            </div>
+        </div>
+        <ink-input id="ink" width="[[width]]" height="[[height]]" tool="[[tool]]" ink-color="[[inkColor]]"></ink-input>
+    </template>
+    <script>
+        class NoteInput extends Polymer.mixinBehaviors([Polymer.IronResizableBehavior], Polymer.GestureEventListeners(Polymer.Element)) {
+            static get is() { return 'note-input'; }
+
+            static get properties() {
+                return {
+                    title: {
+                        type: String
+                    },
+                    inkColor: {
+                        type: String,
+                        value: () => "black"
+                    },
+                    parent: {
+                        type: String,
+                        notify: true,
+                        value: () => "/unfiled"
+                    }
+                }
+            }
+            clear() {
+                this.$.ink.clear();
+            }
+            fireSave(e) {
+                let svgData = this.$.ink.paper.project.exportSVG({asString: true})
+                let timestamp = new Date().getTime() / 1000;
+                let strStamp = Math.round(timestamp).toString()
+                let title = this.title ? `${this.title}-${strStamp}` : strStamp
+                let data = {svg: svgData, timestamp: timestamp, title: title, parent: this.parent}
+                this.dispatchEvent(new CustomEvent('save-note', {detail: data, bubbles: true, composed: true}))
+
+            }
+            ready() {
+                super.ready();
+                this.addEventListener('iron-resize', (e) => {
+                    // inform ink-input
+                    let rect = this.getBoundingClientRect()
+                    this.set('width', rect.width)
+                    this.set('height', rect.height-118)
+                })
+            }
+
+        }
+        window.customElements.define(NoteInput.is, NoteInput)
+    </script>
+</dom-module>

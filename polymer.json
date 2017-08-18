@@ -1,10 +1,10 @@
 {
   "entrypoint": "index.html",
-  "shell": "src/hermes-app.html",
+  "shell": "src/inkwell-app.html",
   "fragments": [
-    "src/hermes-note.html",
-    "src/hermes-search.html",
-    "src/hermes-view404.html"
+    "src/inkwell-board.html",
+    "src/inkwell-home.html",
+    "src/inkwell-view404.html"
   ],
   "sources": [
     "src/**/*",
@@ -13,10 +13,11 @@
   ],
   "extraDependencies": [
     "manifest.json",
+    "bower_components/colorjs/color.js",
+    "bower_components/idb-keyval/dist/idb-keyval-min.js",
     "bower_components/webcomponentsjs/*.js"
   ],
   "lint": {
-    "rules": ["polymer-2"]
   },
   "builds": [{
     "preset": "es6-unbundled"
