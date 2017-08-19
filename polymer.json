@@ -13,7 +13,6 @@
   ],
   "extraDependencies": [
     "manifest.json",
-    "bower_components/colorjs/color.js",
     "bower_components/idb-keyval/dist/idb-keyval-min.js",
     "bower_components/webcomponentsjs/*.js"
   ],
