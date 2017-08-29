@@ -28,6 +28,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="lazy-import" href="inkwell-note.html">
 <link rel="lazy-import" href="inkwell-home.html">
 <link rel="lazy-import" href="inkwell-board.html">
+<link rel="lazy-import" href="inkwell-annotate.html">
 <link rel="lazy-import" href="inkwell-view404.html">
 
 <dom-module id="inkwell-app">
@@ -108,6 +109,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
           <a name="home" href="home">Home</a>
           <a name="note" href="note">Notes</a>
+          <a name="annotate" href="annotate">Annotate</a>
           <a name="search" href="search">Search</a>
         </iron-selector>
       </app-drawer>
@@ -123,6 +125,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </app-header>
 
         <iron-pages on-edit-note="editNote"
+            on-delete-note="deleteNote"
             on-create-card="createCard"
             selected="[[page]]"
             attr-for-selected="name"
@@ -131,8 +134,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <inkwell-board name="board" route="{{subroute}}" board="[[findBoard(boards, route.path)]]"></inkwell-board>
           <inkwell-home name="home"
             on-create-board="createBoard"
+            on-delete-board="deleteBoard"
             boards="[[boards]]"
             unfiled-cards="[[unfiledCards]]"></inkwell-home>
+          <inkwell-annotate name="annotate"></inkwell-annotate>
           <inkwell-view404 name="view404"></inkwell-view404>
         </iron-pages>
       </app-header-layout>
@@ -248,6 +253,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         console.log(e);
         this.set('dialogNote', e.detail)
         this.$.noteDialog.open();
+      }
+      async deleteBoard(e) {
+        let _id = e.detail._id;
+        let board = await this.db.get(_id);
+        await this.db.bulkDocs(board.children.map(card => {
+          return Object.assign(card, {_deleted: true})
+        }))
+        
+        await this.db.remove(e.detail);
+        this.splice('boards', this.boards.find(board => board._id == _id), 1)
+      }
+      async deleteNote(e) {
+        console.log(e.detail);
+        await this.db.remove(e.detail);
+        // update parent
+        let _id = e.detail._id;
+        Promise.all((await this.getBoards()).filter((board) => {
+          return board.doc.children.indexOf(_id) != -1
+        }).map(async board => {
+          let idx = board.doc.children.indexOf(_id);
+          await this.db.put(Object.assign(board.doc, {children: board.doc.children.filter(elem => elem != _id)}))
+        }))
+        let unfiled = await this.db.get('/unfiled');
+        let unfiledChildren = unfiled.children;
+        let idx = unfiledChildren.indexOf(_id);
+        let updatedUnfiled = Object.assign(unfiled, { children: unfiledChildren.filter(elem => elem != _id) })
+        if(idx != -1) {
+          await this.db.put(updatedUnfiled)
+        }
       }
       async initHome() {
         let boards = await Promise.all((await this.getBoards()).map(async (board) => {

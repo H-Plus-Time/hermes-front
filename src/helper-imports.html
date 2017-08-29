@@ -1,9 +1,16 @@
-<script src="../bower_components/colorjs/color.js"></script>
-<script>
-    self.Color = net.brehaut.Color;
-</script>
-<script src="../bower_components/localforage/dist/localforage.min.js"></script>
 <script src="../bower_components/idb-keyval/dist/idb-keyval-min.js"></script>
 <script src="../bower_components/pouchdb/dist/pouchdb.min.js"></script>
 <script src="../bower_components/pouchdb/dist/pouchdb.find.min.js"></script>
 <script src="../bower_components/worker-pouch/dist/pouchdb.worker-pouch.min.js"></script>
+<script src="../bower_components/pdfjs-dist/build/pdf.combined.js"></script>
+<script src="../bower_components/SVG-to-PDFKit/examples/pdfkit.js"></script>
+<script src="../bower_components/SVG-to-PDFKit/examples/blobstream.js"></script>
+<script src="../bower_components/SVG-to-PDFKit/source.js"></script>
+<script src="../bower_components/svg2pdf.js/dist/svg2pdf.min.js"></script>
+<script src="../bower_components/jspdf-yworks/dist/jspdf.debug.js"></script>
+<script src="../bower_components/FileSaver.js/FileSaver.min.js"></script>
+<script>
+    PDFDocument.prototype.addSVG = function (svg, x, y, options) {
+        return SVGtoPDF(this, svg, x, y, options), this;
+    };
+</script>

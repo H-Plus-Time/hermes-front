@@ -1,0 +1,168 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/vaadin-upload/vaadin-upload.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="inkwell-annotate">
+    <template>
+        <style include="iron-flex iron-flex-alignment">
+            :host {
+                display: block
+            }
+            #pdf {
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+            }
+            paper-button {
+                background: #212121;
+                color:white;
+            }
+        </style>
+
+        
+        <div class="horizontal layout justified">
+            <vaadin-upload no-auto max-files="1" files="{{files}}"></vaadin-upload>
+            <paper-button on-tap="_savePDF">Save</paper-button>
+        </div>
+        <div id="display">
+            <div id="pdf"></div>
+        </div>
+    </template>
+
+    <script>
+        /**
+         * `inkwell-annotate` Description
+         *
+         * @summary ShortDescription.
+         * @customElement
+         * @polymer
+         * @extends {Polymer.Element}
+         */
+        class InkwellAnnotate extends Polymer.Element {
+            /**
+             * String providing the tag name to register the element under.
+             */
+            static get is() {
+                return 'inkwell-annotate';
+            }
+
+            /**
+             * Object describing property-related metadata used by Polymer features
+             */
+            static get properties() {
+                return {
+                    files: {
+                        type: Array,
+                        value: () => []
+                    },
+                    pdf: Object,
+                    pages: Array
+                };
+            }
+            /**
+              * Array of strings describing multi-property observer methods and their
+              * dependant properties
+              */
+            static get observers() {
+                return [
+                    '_displayPDF(files.splices)'
+                ];
+            }
+            downloadURI(uri, name) {
+                let link = document.createElement("a");
+                link.download = name;
+                link.href = uri;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            _savePDF(e) {
+                let parent = this.$.pdf.firstChild.cloneNode(true);
+                // pdfjs incorrectly writes everything with the svg namespace.
+                // HTML5 parser doesn't mind, but this thing does
+                parent.innerHTML = parent.innerHTML.replace(/svg:/g, '')
+
+                let svg = parent.firstChild;
+                console.log(svg);
+                let doc = new PDFDocument({ size: 'A4', layout: 'portrait' });
+                let stream = doc.pipe(blobStream())
+
+                doc.addSVG(svg, 0, 0, {});
+                doc.save();
+                doc.end();
+                console.log(stream)
+                stream.on("finish", function() {
+                    console.log("finished stream")
+                    console.log(this);
+                    console.log(stream);
+                    let blob = stream.toBlob("application/pdf");
+                    console.log(blob);
+                    saveAs(blob, 'test.pdf')
+                    // this.downloadURI(stream.toBlobURL("application/pdf"), "helloWorld.pdf");
+                });
+            }
+            _displayPDF(e) {
+                console.log(e);
+                if(this.files.length == 0) {
+                    // clear up stuff
+                    return;
+                }
+                // parse the file
+                let reader = new FileReader();
+                reader.onload = (e) => {
+                    console.log(reader.result);
+                    var typedarray = new Uint8Array(reader.result);
+
+                    PDFJS.getDocument(typedarray).then(async (pdf) => {
+                        this.set('pdf', pdf);
+                        while (this.$.pdf.hasChildNodes()) {
+                            this.$.pdf.removeChild(this.$.pdf.lastChild);
+                        }
+                        await Promise.all(Array.from({ length: pdf.numPages }, (v, k) => k + 1).map(n => {
+                            return pdf.getPage(n).then(page => {
+                                var viewport = page.getViewport(1.0);
+                                let container = document.createElement('div');
+                                this.$.pdf.appendChild(container);
+                                container.style.width = viewport.width + 'px';
+                                container.style.height = viewport.height + 'px';
+                                return page.getOperatorList()
+                                .then((opList) => {
+                                    var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
+                                    return svgGfx.getSVG(opList, viewport);
+                                })
+                                .then(function (svg) {
+                                    container.appendChild(svg);
+                                })
+                            })
+                        }))
+                        this.splice('files', 0, 1);
+                    });
+                }
+                reader.readAsArrayBuffer(this.files[0])
+            }
+
+            /**
+             * Instance of the element is created/upgraded. Use: initializing state,
+             * set up event listeners, create shadow dom.
+             * @constructor
+             */
+            constructor() {
+                super();
+            }
+
+            /**
+             * Use for one-time configuration of your component after local DOM is initialized. 
+             */
+            ready() {
+                super.ready();
+
+                Polymer.RenderStatus.afterNextRender(this, function() {
+                    
+                });
+            }
+
+        }
+
+        window.customElements.define(InkwellAnnotate.is, InkwellAnnotate);
+    </script>
+</dom-module>

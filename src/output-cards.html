@@ -9,19 +9,18 @@
 -->
 <dom-module id="note-card">
     <template>
-        <style>
+        <style include="iron-flex iron-flex-alignment">
             :host {
                 display: block;
                 background:white;
                 position:relative;
             }
-            paper-icon-button {
-                position:absolute;
-                top:0;
-                right:0;
-                z-index:5;
+            .actions {
+                display:flex;
+                align-items:center;
             }
             .container {
+                margin:2px;
                 z-index:2;
                 width:320px;
                 height:240px;
@@ -33,8 +32,13 @@
                 background-image: linear-gradient(to right, grey 1px, transparent 1px), linear-gradient(grey 1px, transparent 1px);
             }
         </style>
-        <h2>[[data.title]]</h2>
-        <paper-icon-button icon="create" on-tap="editCard"></paper-icon-button>
+        <div class="horizontal layout justified">
+            <h2>[[data.title]]</h2>
+            <div class="actions">
+                <paper-icon-button icon="create" on-tap="editCard"></paper-icon-button>
+                <paper-icon-button icon="delete" on-tap="deleteCard"></paper-icon-button>
+            </div>
+        </div>
         <img src$="data:image/svg+xml;utf8,[[data.svg]]" class="container" on-tap="viewCard"></img>
 
     </template>
@@ -61,9 +65,16 @@
             }
             editCard(e) {
                 // stop the tap from going to the card as a whole
+                e.stopPropagation()
                 e.preventDefault();
                 this.dispatchEvent(new CustomEvent('edit-note',
                     {detail: Object.assign(this.data, {parent: this.parent}), composed: true, bubbles: true }))
+            }
+            deleteCard(e) {
+                e.stopPropagation()
+                e.preventDefault();
+                this.dispatchEvent(new CustomEvent('delete-note',
+                    {detail: this.data, composed: true, bubbles: true}))
             }
 
             observeSVGData(newVal, oldVal) {
@@ -94,7 +105,7 @@
 -->
 <dom-module id="board-card">
     <template>
-        <style>
+        <style include="iron-flex iron-flex-alignment">
             :host {
                 display: block;
                 --card-color: white;
@@ -105,10 +116,19 @@
                 height:160px;
                 padding:5px;
             }
+            .actions {
+                display:flex;
+                align-items:center;
+            }
         </style>
 
-        <h2>[[data.title]]</h2>
-        
+        <div class="horizontal layout justified">
+            <h2>[[data.title]]</h2>
+            <div class="actions">
+                <paper-icon-button icon="create" on-tap="editBoard"></paper-icon-button>
+                <paper-icon-button icon="delete" on-tap="deleteBoard"></paper-icon-button>
+            </div>
+        </div>
     </template>
 
     <script>
@@ -128,6 +148,7 @@
             }
 
             observeColor(hex) {
+                if(!hex) return
                 let vals = [hex.substring(1,3),hex.substring(3,5), hex.substring(5)].map(subhex => {
                     let c = parseInt(subhex, 16) / 255.0;
                     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / Math.pow(1.055,2.4))
@@ -139,6 +160,18 @@
                     textColor = "#000000"
                 }
                 this.updateStyles({"--card-color": hex, "--card-text-color": textColor})
+            }
+            editBoard(e) {
+                // stop the tap from going to the card as a whole
+                e.preventDefault();
+                this.dispatchEvent(new CustomEvent('edit-board',
+                    { detail: Object.assign(this.data, { parent: this.parent }), composed: true, bubbles: true }))
+            }
+            deleteBoard(e) {
+                e.stopPropagation()
+                e.preventDefault();
+                this.dispatchEvent(new CustomEvent('delete-board',
+                    { detail: this.data, composed: true, bubbles: true }))
             }
 
             constructor() {

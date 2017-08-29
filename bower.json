@@ -24,7 +24,15 @@
     "paper-dialog": "^2.0.0",
     "paper-input": "^2.0.1",
     "paper-tabs": "^2.0.0",
-    "paper-toast": "^2.0.0"
+    "paper-toast": "^2.0.0",
+    "paper-button": "^2.0.0",
+    "pdfjs": "^1.9.426",
+    "pdfjs-dist": "^1.9.491",
+    "vaadin-upload": "^2.0.0",
+    "SVG-to-PDFKit": "alafr/SVG-to-PDFKit",
+    "pdfkit": "devongovett/pdfkit#^0.8.3",
+    "svg2pdf.js": "^1.0.7",
+    "FileSaver.js": "^0.0.2"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^6.0.0-prerelease.7"
