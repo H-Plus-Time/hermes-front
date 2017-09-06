@@ -6,6 +6,7 @@
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-swatch-picker/paper-swatch-picker.html">
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/app-pouchdb/app-pouchdb-document.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/paper-styles/element-styles/paper-material-styles.html">
  <link rel="import" href="output-cards.html"> 
@@ -68,8 +69,8 @@
        
         <h2>Unfiled Cards</h2>
         <div class="horizontal layout center-justified wrap">
-            <template is="dom-repeat" items="[[unfiledCards]]">
-                <note-card parent="/unfiled" data="[[item]]"></note-card>
+            <template is="dom-repeat" items="[[unfiled.children]]" sort="idSort">
+                 <note-card parent="/unfiled" id="[[item]]"></note-card> 
             </template>
             <paper-fab class="add" icon="add" on-tap="newCard"></paper-fab>
         </div>
@@ -136,6 +137,9 @@
             openBoard(e) {
                 this.dispatchEvent(new CustomEvent('view-board', {detail: e.model.item._id, bubbles: true, composed: true}))
             }
+            computeDate() {
+                return new Date()
+            }
 
             ready() {
                 super.ready();
@@ -143,6 +147,9 @@
                 Polymer.RenderStatus.afterNextRender(this, function() {
                     
                 });
+            }
+            idSort(a,b) {
+                return a._id > b._id;
             }
 
         }

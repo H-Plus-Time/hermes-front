@@ -33,7 +33,7 @@
     "pdfkit": "devongovett/pdfkit#^0.8.3",
     "svg2pdf.js": "^1.0.7",
     "FileSaver.js": "^0.0.2",
-    "paper-button": "^2.0.0"
+    "app-pouchdb": "^2.1.1"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^6.0.0-prerelease.7"

@@ -32,6 +32,8 @@
                 background-image: linear-gradient(to right, grey 1px, transparent 1px), linear-gradient(grey 1px, transparent 1px);
             }
         </style>
+        <app-pouchdb-document db-name="inkwelldb"
+            doc-id="[[id]]" data="{{data}}"></app-pouchdb-document>
         <div class="horizontal layout justified">
             <h2>[[data.title]]</h2>
             <div class="actions">

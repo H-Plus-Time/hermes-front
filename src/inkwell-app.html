@@ -22,6 +22,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/app-pouchdb/app-pouchdb-query.html">
+<link rel="import" href="../bower_components/app-pouchdb/app-pouchdb-document.html">
 <link rel="import" href="helper-imports.html">
 <link rel="import" href="note-input.html">
 <link rel="import" href="inkwell-icons.html">
@@ -94,6 +96,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           parent="[[dialogNote.parent]]"></note-input>
       </div>
     </paper-dialog>
+    <app-pouchdb-query id="boards"
+      db-name="inkwelldb" selector="_id $gt '/board/', _id $lt '/board/�'"
+      fields='["_id", "color", "title", "children"]' sort='["_id"]' data="{{boards}}">
+    </app-pouchdb-query>
+    <app-pouchdb-document db-name="inkwelldb" doc-id="/unfiled" data="{{unfiled}}">
+    </app-pouchdb-document>
     <app-location route="{{route}}"></app-location>
     <app-route
         route="{{route}}"
@@ -123,7 +131,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <div main-title>Inkwell</div>
           </app-toolbar>
         </app-header>
-
+        <array-selector id="selector" items="{{boards}}" selected="{{board}}" toggle></array-selector>
         <iron-pages on-edit-note="editNote"
             on-delete-note="deleteNote"
             on-create-card="createCard"
@@ -131,12 +139,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             attr-for-selected="name"
             fallback-selection="view404"
             role="main">
-          <inkwell-board name="board" route="{{subroute}}" board="[[findBoard(boards, route.path)]]"></inkwell-board>
+          <inkwell-board name="board" route="{{subroute}}" board="[[board]]"></inkwell-board>
           <inkwell-home name="home"
             on-create-board="createBoard"
             on-delete-board="deleteBoard"
             boards="[[boards]]"
-            unfiled-cards="[[unfiledCards]]"></inkwell-home>
+            unfiled="[[unfiled]]"></inkwell-home>
           <inkwell-annotate name="annotate"></inkwell-annotate>
           <inkwell-view404 name="view404"></inkwell-view404>
         </iron-pages>
@@ -169,7 +177,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       static get observers() {
         return [
           '_routePageChanged(routeData.page)',
+          'observePath(boards, route.path)'
         ];
+      }
+      observePath(boards, path) {
+        if(path.startsWith("/board/")) {
+          this.$.selector.select(boards.find(elem => elem._id == path));
+        }
       }
 
       constructor() {
@@ -221,13 +235,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         let uid = `/card/${data.title.toLowerCase()}`;
         await this.putWrapper(uid, 'card', data)
         let parentDoc = await this.db.get(data.parent);
-        if(parentDoc.children.indexOf(uid) == -1) {
-          parentDoc.children.push(uid);
+        // directly use polymer data binding
+        if(data.parent == '/unfiled') {
+          // push to unfiled
+          if(!this.unfiled.children) {
+            this.set('unfiled.children', []);
+          }
+          this.push('unfiled.children', uid)
         }
-        await this.db.put(Object.assign(parentDoc, {
-          _id: data.parent,
-          _rev: parentDoc._rev
-        }));
+        else {
+          // child of a normal board
+          parentDoc.children.push(uid);
+          await this.db.put(parentDoc);
+          this.$.boards.refresh();
+          
+        }
       }
       findBoard(boards, path) {
         if(!boards || !path) {
@@ -240,14 +262,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         let data = e.detail;
         let uid = `/board/${data.title.toLowerCase()}`;
         this.putWrapper(uid, 'board', Object.assign(data, {children: []}))
-      }
-      async getBoards() {
-        let boards = await this.db.allDocs({
-          include_docs: true,
-          startkey: '/board/',
-          endkey: `/board/\ufff0`
-        })
-        return boards.rows
       }
       async editNote(e) {
         console.log(e);
@@ -265,38 +279,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.splice('boards', this.boards.find(board => board._id == _id), 1)
       }
       async deleteNote(e) {
-        console.log(e.detail);
         await this.db.remove(e.detail);
         // update parent
         let _id = e.detail._id;
-        Promise.all((await this.getBoards()).filter((board) => {
+        this.boards.filter((board) => {
           return board.doc.children.indexOf(_id) != -1
-        }).map(async board => {
-          let idx = board.doc.children.indexOf(_id);
+        }).map(async (board, bIdx) => {
           await this.db.put(Object.assign(board.doc, {children: board.doc.children.filter(elem => elem != _id)}))
-        }))
-        let unfiled = await this.db.get('/unfiled');
-        let unfiledChildren = unfiled.children;
+        })
+        let unfiledChildren = this.unfiled.children;
         let idx = unfiledChildren.indexOf(_id);
         let updatedUnfiled = Object.assign(unfiled, { children: unfiledChildren.filter(elem => elem != _id) })
         if(idx != -1) {
           await this.db.put(updatedUnfiled)
         }
-      }
-      async initHome() {
-        let boards = await Promise.all((await this.getBoards()).map(async (board) => {
-          let children = await this.db.allDocs({
-            include_docs: true,
-            keys: board.doc.children != undefined ? board.doc.children : []
-          });
-          return Object.assign(board.doc, {children: children.rows.map(c => c.doc)})
-        }))
-        this.set('boards',boards);
-        let unfiled = await this.db.get('/unfiled');
-        this.set('unfiledCards',(await this.db.allDocs({
-          keys: unfiled.children,
-          include_docs: true
-        })).rows.map(card => card.doc))
       }
       async setupPouch() {
         await workerPouch.isSupportedBrowser().then((supported) => {
@@ -306,11 +302,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.db = new PouchDB('inkwelldb');
           }
         })
-        try {
-          await this.db.get('/unfiled')
-        } catch (err) {
-          await this.db.put({_id: '/unfiled', children: [] })
-        }
       }
       ready() {
         super.ready();
@@ -322,27 +313,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.displayToast(msg, 'success')
             }
           });
-          this.setupPouch().then(() => this.initHome())
+          this.setupPouch().then(console.log)
         });
         this.addEventListener('new-card', (e) => {
           console.log(e);
           let parent = e.detail.parent;
-          this.db.get(e.detail.id).then(card => {
-            console.log(card);
-            if (parent == '/unfiled') {
-
-              this.push('unfiledCards', card);
-            } else {
-              let idx = this.boards.findIndex((elem) => elem._id == parent);
-              console.log(this.boards[idx].children)
-              this.push(`boards.${idx}.children`, card)
-              this.notifySplices(`boards.${idx}.children`,
-                { index: this.boards[idx].children.length-2, removed: [], addedCount: 1, object: this.boards[idx].children, type: 'splice' }
-              );
-
-            }
-          })
-          
+          this.$.boards.refresh();
         })
         this.addEventListener('new-board', (e) => {
           console.log(e);
@@ -381,46 +357,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         Object.assign(e.detail, {timestamp: timestamp})
         let reqBody = JSON.stringify(e.detail);
         let uid = e.detail.timestamp+'-'+e.detail.title;
-        if(navigator.onLine) {
-          // if we're online, post it directly
-          let headers = new Headers({"Content-Type": "application/json"})
-          // emulate a timeout (while the WHATWG committee deliberate)
-          let result = Promise.race([
-            fetch('http://localhost:8080/api/save-note',
-              {headers: headers, method: 'post', body: reqBody}).then(resp => {
-              if(!resp.ok) {
-                // 404 responses are not treated as errors. Force this to be the case
-                throw new Error(resp);
-              }
-              this.displayToast(`${e.detail.title} saved successfully`, 'success')
-              return 'success'
-            }).catch(err => {
-              console.log(err);
-            }),
-            new Promise((_, reject) =>
-              setTimeout(() => reject('timeout'), 7000)
-            )
-          ])
-          if(result == 'timeout') {
-            // we're dealing with a low-quality connection, defer to background
-            // sync.
-            localforage.setItem(uid, reqBody).then(() => {
-              let msg = "Network connection is unreliable, "+e.detail.title+
-                " queued for upload";
-              this.displayToast(msg, 'warning');
-              console.log("Saved note to indexedDB, ready for background sync")
-            })
-          }
-        } else {
-          // store in IndexedDB
-          localforage.setItem(uid, reqBody).then(() => {
-            let msg = "Network connection unavailable, "+e.detail.title +
-              " queued for upload";
-            this.displayToast(msg, 'warning');
-            console.log("Saved note to indexedDB, ready for background sync")
-          })
-          // that's it, just remember to clear it out in service worker
-        }
+        
       }
       fullscreenSuffix(dialogMax) {
         return dialogMax ? '-exit' : '';

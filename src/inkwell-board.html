@@ -20,7 +20,7 @@
                 grid-template-columns: repeat(auto-fill, 330px);
                 grid-template-rows:repeat(auto-fill, 325px);
                 justify-items: stretch;
-                 align-items: stretch; 
+                align-items: stretch; 
                 grid-gap:5px;
             }
             .add {
@@ -47,7 +47,7 @@
     <h2>Cards</h2>
     <div class="container">
         <template is="dom-repeat" items="[[board.children]]">
-             <note-card parent="/board/[[routeData.board]]" data="[[item]]"></note-card> 
+             <note-card parent="/board/[[routeData.board]]" id="[[item]]"></note-card> 
         </template>
         <paper-fab class="add" icon="add" on-tap="editNote"></paper-fab>
     </div>
@@ -64,11 +64,6 @@
                     rootPattern: String,
                     board: Object
                 };
-            }
-            static get observers() {
-                return [
-                    'observeBoard(routeData.board)'
-                ];
             }
 
             editNote() {
